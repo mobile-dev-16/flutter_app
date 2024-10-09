@@ -16,7 +16,8 @@ class AuthRepository {
   final GoogleSignIn _googleSignIn;
 
   // Sign up with email and password
-  Future<User?> signUp({required String email, required String password}) async {
+  Future<User?> signUp(
+      {required String email, required String password}) async {
     try {
       final UserCredential userCredential =
           await _firebaseAuth.createUserWithEmailAndPassword(
@@ -31,7 +32,8 @@ class AuthRepository {
   }
 
   // Sign in with email and password
-  Future<User?> signIn({required String email, required String password}) async {
+  Future<User?> signIn(
+      {required String email, required String password}) async {
     try {
       final UserCredential userCredential =
           await _firebaseAuth.signInWithEmailAndPassword(
@@ -45,17 +47,26 @@ class AuthRepository {
     }
   }
 
-  // Sign in with Google (recall user)
+  // Sign in with Google
   Future<User?> signInWithGoogle() async {
     try {
-      // Initiating the Google Sign-In process (this recalls the user's account)
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
+      // Attempt silent sign-in first
+      GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
+
+      // If silent sign-in fails, use the account selector
       if (googleUser == null) {
-        _logger.e('Google sign-in failed, no user remembered');
+        _logger.i('Silent sign-in failed, attempting with account selector');
+        googleUser = await _googleSignIn.signIn();
+      }
+
+      // If still null, user canceled the sign-in
+      if (googleUser == null) {
+        _logger.e('Google sign-in failed or was canceled by the user');
         return null;
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -84,7 +95,8 @@ class AuthRepository {
         return null; // User canceled the sign-up
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,

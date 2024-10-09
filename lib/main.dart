@@ -1,5 +1,6 @@
 import 'package:eco_bites/app.dart';
 import 'package:eco_bites/features/address/presentation/bloc/address_bloc.dart';
+import 'package:eco_bites/features/address/repository/address_repository.dart';
 import 'package:eco_bites/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:eco_bites/features/auth/repository/auth_repository.dart';
 import 'package:eco_bites/features/cart/domain/models/cart_item_data.dart';
@@ -65,7 +66,9 @@ Future<void> main() async {
           create: (BuildContext context) => OrderBloc()..add(LoadOrders()),
         ),
         BlocProvider<AddressBloc>(
-          create: (BuildContext context) => AddressBloc(),
+          create: (BuildContext context) => AddressBloc(
+            addressRepository: AddressRepository(),
+          ),
         ),
         BlocProvider<FoodBusinessBloc>(
           create: (BuildContext context) => FoodBusinessBloc(
@@ -74,7 +77,9 @@ Future<void> main() async {
           ),
         ),
       ],
-      child: MyApp(appLaunchTime: appLaunchTime,),
+      child: MyApp(
+        appLaunchTime: appLaunchTime,
+      ),
     ),
   );
 }

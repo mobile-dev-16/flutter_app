@@ -1,13 +1,22 @@
+import 'package:eco_bites/features/address/domain/models/address.dart';
 import 'package:eco_bites/features/address/presentation/bloc/address_event.dart';
 import 'package:eco_bites/features/address/presentation/bloc/address_state.dart';
+import 'package:eco_bites/features/address/repository/address_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddressBloc extends Bloc<AddressEvent, AddressState> {
-  AddressBloc() : super(AddressInitial()) {
+  AddressBloc({required this.addressRepository}) : super(AddressInitial()) {
     on<SaveAddress>(_onSaveAddress);
     on<LoadAddress>(_onLoadAddress);
     on<UpdateCurrentLocation>(_onUpdateCurrentLocation);
     on<ClearAddress>(_onClearAddress);
+  }
+  final AddressRepository addressRepository;
+
+  Future<String?> _getUserId() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userId');
   }
 
   Future<void> _onSaveAddress(
@@ -16,6 +25,12 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
   ) async {
     emit(AddressLoading());
     try {
+      final String? userId = await _getUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+      await addressRepository.saveAddress(userId, event.address);
+
       final AddressState currentState = state;
       if (currentState is AddressLoaded) {
         emit(
@@ -38,9 +53,15 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
   ) async {
     emit(AddressLoading());
     try {
-      final AddressState currentState = state;
-      if (currentState is AddressLoaded) {
-        emit(currentState);
+      final String? userId = await _getUserId();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+      final List<Address> addresses =
+          await addressRepository.fetchUserAddresses(userId);
+
+      if (addresses.isNotEmpty) {
+        emit(AddressLoaded(addresses.first));
       } else {
         emit(AddressInitial());
       }
